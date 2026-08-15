@@ -1,11 +1,10 @@
 ---
 name: task-director
-author: "小凛酱丷"
-default_mode: "HITL"
-trigger: ["派任务","orchestrate","导演","直接派","任务拆分","分身协作"]
-redlines: ["隐私","对外发布","不可逆操作","预算安全"]
-specialist_registry: "./specialist-registry.md"
-role_templates: "./role-templates.md"
+description: Orchestrate complex tasks by decomposing work into an Agent team, defining acceptance criteria, dispatching workers, reviewing results, and retaining reusable role templates. Use when the user asks to orchestrate, 派任务, 导演, 任务拆分, or 分身协作, especially for multi-step work that benefits from parallel execution and quality gates.
+license: MIT
+metadata:
+  author: "小凛酱丷"
+  version: "1.0"
 ---
 
 # 任务总监 · 技能
