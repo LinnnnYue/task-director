@@ -1,6 +1,6 @@
 ---
 name: task-director
-description: Orchestrate complex tasks by decomposing work into an Agent team, defining acceptance criteria, dispatching workers, reviewing results, and retaining reusable role templates. Use when the user asks to orchestrate, 派任务, 导演, 任务拆分, or 分身协作, especially for multi-step work that benefits from parallel execution and quality gates.
+description: 通用的 Orchestrator（任务总监）元技能：把任意复杂任务拆解为 Agent 团队、定标准、做质检、沉淀可复用模板。当用户说「派任务 / orchestrate / 导演 / 任务拆分 / 分身协作」时触发，尤其适合需并行执行与质量门禁的多步骤工作。Use when the user asks to orchestrate, 派任务, 导演, 任务拆分, or 分身协作 — especially multi-step work that benefits from parallel execution and quality gates.
 license: MIT
 metadata:
   author: "小凛酱丷"
