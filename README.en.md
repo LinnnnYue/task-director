@@ -34,6 +34,8 @@ Does any of this sound familiar?
 ```text
 WorkBuddy:   ~/.workbuddy/skills/task-director/
 Claude Code: ~/.claude/skills/task-director/   # or .agents/skills, .anybox/skills
+Codex:       ~/.codex/skills/task-director/    # or $CODEX_HOME/skills/task-director/
+Cross-client project install: .agents/skills/task-director/
 ```
 
 The dir must contain: `SKILL.md`, `specialist-registry.md`, `role-templates.md`, `score-calibration-log.md`, `role-templates-archive.md`.

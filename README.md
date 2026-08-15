@@ -34,6 +34,8 @@
 ```text
 WorkBuddy:   ~/.workbuddy/skills/task-director/
 Claude Code: ~/.claude/skills/task-director/   # 或项目内 .agents/skills、.anybox/skills
+Codex:       ~/.codex/skills/task-director/    # 或 $CODEX_HOME/skills/task-director/
+项目通用:    .agents/skills/task-director/
 ```
 
 目录内需含：`SKILL.md`、`specialist-registry.md`、`role-templates.md`、`score-calibration-log.md`、`role-templates-archive.md`。
