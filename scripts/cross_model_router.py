@@ -33,11 +33,10 @@ dropped). Both must differ between executor and reviewer.
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
-from concurrent.futures import TimeoutError as FutureTimeout
 from dataclasses import dataclass, field
 import json
 import re
+import threading
 import time
 from typing import Callable, Iterable, Mapping, Sequence
 
@@ -333,22 +332,32 @@ class HealthRegistry:
 
 
 def probe_route(probe: ProbeFn | None, route: Route, timeout: float) -> bool:
-    """Probe one candidate; timeout and any error count as unhealthy."""
+    """Probe one candidate; timeout and any error count as unhealthy.
+
+    The probe runs on a **daemon** thread so a hung endpoint cannot keep the
+    process alive: a `ThreadPoolExecutor` worker is non-daemon, so a probe that
+    ignores its timeout would block interpreter exit after the selection run
+    finished. Daemon threads are abandoned at exit, which is the right cost for
+    a health check whose only failure mode is "this model is unusable".
+    """
     if probe is None:
         return True
     if timeout <= 0:
         raise ValueError("探针超时必须为正数")
-    executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="model-probe")
-    future = executor.submit(probe, route)
-    try:
-        return bool(future.result(timeout=timeout))
-    except FutureTimeout:
-        future.cancel()
-        return False
-    except Exception:
-        return False
-    finally:
-        executor.shutdown(wait=False)
+
+    outcome: dict[str, object] = {}
+
+    def run() -> None:
+        try:
+            outcome["healthy"] = bool(probe(route))
+        except Exception as error:  # any probe error means the model is unusable
+            outcome["healthy"] = False
+            outcome["error"] = str(error)
+
+    thread = threading.Thread(target=run, name=f"model-probe:{route}", daemon=True)
+    thread.start()
+    thread.join(timeout)
+    return bool(outcome.get("healthy", False))
 
 
 # --------------------------------------------------------------------------- #

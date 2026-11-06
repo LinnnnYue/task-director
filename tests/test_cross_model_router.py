@@ -144,6 +144,38 @@ class HealthTest(unittest.TestCase):
         self.assertTrue(health.is_dead(bad))
         self.assertTrue(any("探针失败" in line for line in selection.evidence))
 
+    def test_hung_probe_does_not_leave_a_non_daemon_thread_behind(self):
+        """A probe thread must not keep the process alive after selection."""
+        import threading
+
+        release = threading.Event()
+        route = Route("trae", "glm-5.3-flash")
+
+        def hang(_):  # blocks far longer than the probe timeout
+            release.wait(30)
+            return True
+
+        try:
+            before = {t.name for t in threading.enumerate()}
+            self.assertFalse(probe_route(hang, route, 0.05))
+            leftover = [
+                t for t in threading.enumerate()
+                if t.name not in before and t.is_alive() and not t.daemon
+            ]
+            self.assertEqual(leftover, [], "探针留下非守护线程会阻止进程退出")
+        finally:
+            release.set()
+
+    def test_probe_exception_is_unhealthy_not_propagated(self):
+        def boom(_):
+            raise RuntimeError("403")
+
+        self.assertFalse(probe_route(boom, Route("codearts", "deepseek-v4.1-flash-1017"), 1))
+
+    def test_probe_timeout_must_be_positive(self):
+        with self.assertRaises(ValueError):
+            probe_route(lambda _: True, Route("trae", "qwen3.8-flash"), 0)
+
     def test_timeout_is_treated_as_unhealthy(self):
         slow = Route("loomy", "qwen3.8-flash", "mid")
 

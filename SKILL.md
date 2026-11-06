@@ -197,7 +197,7 @@ metadata:
 - 全部候选中都没有健康异族对时：**报错停下，交用户补池或等模型恢复**。不许"先用同族评一下"。这种时候正确的动作是把问题暴露出来，而不是把包庇悄悄做完。
 
 ### 可执行实现与校验
-- 参考实现：`./scripts/cross_model_router.py`（标准库，零依赖，不真调模型）。
+- 参考实现：`./scripts/cross_model_router.py`（标准库，零依赖，不真调模型）。探针跑在守护线程上，超时即弃——挂死的端点不许拖住整个派发进程。
 - 候选池 schema 示例：`./scripts/model-pool.example.json`。
 - 校验：`python -m unittest discover -s tests -v`（覆盖同族被拒、连续轮换始终异族、坏模型被跳过并拉黑、pro 档禁用、降档不放宽族，以及文档承诺未与实现脱节）。
 
