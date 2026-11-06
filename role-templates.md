@@ -61,7 +61,7 @@ cross_family: true
 
 ## Agent: ref-collector
 身份：你是参考搜集专员，隶属用户任务的总监调度。
-模型：provider=codearts / model=deepseek-v4.1-flash-1017（族 deepseek.v4.1.flash）。
+模型：provider=loomy / model=GLM-5.3-Flash（族 glm.5.3.flash）。你只提炼风格词，评审结论不由你下。
 任务：把用户给的审美参考（链接/截图/描述）提炼为可执行的风格词清单。
 输入：用户提供的参考源。
 输出规范：风格词清单（圆角/留白/取色/光效/动效曲线），每条附依据。
@@ -91,7 +91,7 @@ cross_family: true
 
 ## Agent: lead-integrator
 身份：你是整合专员，隶属用户任务的总监调度。
-模型：provider=magicrew / model=deepseek-v4.1-flash（族 deepseek.v4.1.flash）。与前序角色均异族。
+模型：provider=magicrew / model=deepseek-v4.1-flash（族 deepseek.v4.1.flash）。与 ui-designer（glm）、reviewer（qwen）、ref-collector（glm）均异供应商且异族。
 任务：把 reviewer 的指令回填给 ui-designer 迭代，最终统一交付。
 输入：原型 + 评分卡。
 输出规范：终版单文件 HTML + 变更说明。

@@ -116,9 +116,35 @@ class RoleTemplatesTest(unittest.TestCase):
             self.assertNotEqual(tier, "pro", "模板不得以 pro 档入库")
 
     def test_every_agent_prompt_pins_its_model_line(self):
-        agent_sections = re.split(r"\n## Agent: ", self.text)[1:]
-        for section in agent_sections:
-            self.assertRegex(section.split("\n## ")[0], r"模型：provider=", "角色提示词缺少模型行")
+        for body in self.agent_bodies():
+            self.assertRegex(body, r"模型：provider=", "角色提示词缺少模型行")
+            self.assertRegex(body, r"model=[^\s（]+", "角色提示词缺少 model 值")
+
+    def test_every_pinned_model_parses_as_a_route(self):
+        for body in self.agent_bodies():
+            match = re.search(r"provider=([^\s／/]+)\s*/\s*model=([^\s（]+)", body)
+            self.assertIsNotNone(match, body[:60])
+            Route(match.group(1).strip(), match.group(2).strip())  # raises on a bad pair
+
+    def test_integrator_never_shares_the_executor_family(self):
+        for block in self.blocks:
+            worker = field(block, "worker_model")
+            worker_family = Route(*worker.split("/", 1)).family
+            for body in [b for b in re.split(r"\n## Agent: ", block)[1:] if "整合专员" in b]:
+                match = re.search(r"provider=([^\s／/]+)\s*/\s*model=([^\s（]+)", body)
+                self.assertIsNotNone(match)
+                integrator = Route(match.group(1).strip(), match.group(2).strip())
+                self.assertNotEqual(
+                    integrator.family,
+                    worker_family,
+                    f"整合专员 {integrator} 与执行者同族 {worker_family}，会顺手圆过同族的遗漏",
+                )
+
+    def agent_bodies(self) -> list[str]:
+        return [
+            section.split("\n## ")[0]
+            for section in re.split(r"\n## Agent: ", self.text)[1:]
+        ]
 
     def test_reviewer_prompts_carry_the_anti_collusion_instructions(self):
         reviewers = [
