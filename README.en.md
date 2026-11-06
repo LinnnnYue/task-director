@@ -40,7 +40,7 @@ Codex:       ~/.codex/skills/task-director/    # or $CODEX_HOME/skills/task-dire
 Cross-client project install: .agents/skills/task-director/
 ```
 
-The dir must contain: `SKILL.md`, `specialist-registry.md`, `role-templates.md`, `score-calibration-log.md`, `role-templates-archive.md`.
+The dir must contain: `SKILL.md`, `role-models.md`, `specialist-registry.md`, `role-templates.md`, `score-calibration-log.md`, `role-templates-archive.md`. `scripts/` and `tests/` hold the optional reference implementation and its checks — the skill works without them, it just loses automatic selection.
 
 **Use**
 

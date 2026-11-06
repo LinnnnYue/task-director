@@ -40,7 +40,7 @@ Codex:       ~/.codex/skills/task-director/    # 或 $CODEX_HOME/skills/task-dir
 项目通用:    .agents/skills/task-director/
 ```
 
-目录内需含：`SKILL.md`、`specialist-registry.md`、`role-templates.md`、`score-calibration-log.md`、`role-templates-archive.md`。
+目录内需含：`SKILL.md`、`role-models.md`、`specialist-registry.md`、`role-templates.md`、`score-calibration-log.md`、`role-templates-archive.md`。`scripts/` 与 `tests/` 是可选的参考实现与校验，装上它们才能跑 `python -m unittest`；不装也能用，只是少了自动选型。
 
 **使用**
 

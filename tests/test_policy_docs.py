@@ -190,8 +190,23 @@ class ReadmeTest(unittest.TestCase):
 
     def test_readmes_list_the_new_files_in_the_structure(self):
         for name in ("README.md", "README.en.md"):
-            self.assertIn("role-models.md", read(name))
-            self.assertIn("tests/", read(name))
+            text = read(name)
+            self.assertIn("role-models.md", text)
+            self.assertIn("tests/", text)
+
+    def test_install_instructions_name_every_required_file(self):
+        required = (
+            "SKILL.md",
+            "role-models.md",
+            "specialist-registry.md",
+            "role-templates.md",
+            "score-calibration-log.md",
+            "role-templates-archive.md",
+        )
+        for name in ("README.md", "README.en.md"):
+            text = read(name)
+            for filename in required:
+                self.assertIn(filename, text, f"{name} 未列出必需文件 {filename}")
 
 
 class SpecialistRegistryTest(unittest.TestCase):
