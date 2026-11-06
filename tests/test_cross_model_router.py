@@ -123,6 +123,32 @@ class RotationTest(unittest.TestCase):
         second = sel(task_class="standard", rotation=rotation).worker
         self.assertNotEqual(first, second, "轮换不能每次都取目录第一个候选")
 
+    def test_a_failed_attempt_does_not_consume_a_rotation_turn(self):
+        """Only the returned selection may advance the cursors.
+
+        Regression: `_select_once` used to write the cursors before the caller
+        knew whether the attempt succeeded, so a preferred band that had no
+        cross-family pair silently burned a turn — and with one attempt failing
+        every time, the rotation stood still.
+        """
+        # `simple` prefers free+cheap; here the only cross-family pair is mid,
+        # so the first plan always fails and dispatch must degrade.
+        pool = Pool(
+            (
+                Route("loomy", "spark-x2.6", "free"),
+                Route("trae", "glm-5.3-flash", "mid"),
+                Route("loomy", "qwen3.8-flash", "mid"),
+            )
+        )
+        rotation = RotationState()
+        workers = []
+        for _ in range(3):
+            selection = select_roles(pool, task_class="simple", rotation=rotation)
+            self.assertTrue(selection.degraded)
+            self.assertTrue(cross_ok(selection.worker, selection.reviewer))
+            workers.append(str(selection.worker))
+        self.assertGreater(len(set(workers)), 1, "每轮都失败降档时轮换仍须前进")
+
     def test_rotation_visits_every_legal_family_before_repeating(self):
         rotation = RotationState()
         picked = []

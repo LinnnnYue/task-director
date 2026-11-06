@@ -409,6 +409,10 @@ class Selection:
     task_type: str | None
     degraded: bool
     evidence: list[str] = field(default_factory=list)
+    #: Cursor advances to commit once this selection is actually returned.
+    #: A failed attempt must not move the rotation, or a selection that never
+    #: happened would still consume a turn.
+    next_cursors: tuple[int, int] | None = None
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -422,7 +426,7 @@ class Selection:
 
 
 def _note(evidence: list[str], line: str) -> None:
-    """Append a line kept in the final evidence, removing duplicates."""
+    """Append a line to the final evidence (duplicates ignored)."""
     if line not in evidence:
         evidence.append(line)
 
@@ -489,7 +493,7 @@ def select_roles(
 
     for band, degraded, prefer in plans:
         try:
-            return _select_once(
+            selection = _select_once(
                 pool,
                 task_class=task_class,
                 task_type=task_type,
@@ -505,6 +509,9 @@ def select_roles(
         except (NoCandidateError, CrossFamilyError) as error:
             first_error = first_error or error
             continue
+        if selection.next_cursors:
+            rotation.worker_cursor, rotation.reviewer_cursor = selection.next_cursors
+        return selection
     assert first_error is not None
     raise first_error
 
@@ -544,13 +551,12 @@ def _select_once(
         filtered = list(legal)
     ordered = interleave_by_family(filtered)
 
-    worker, index = _pick(ordered, rotation.worker_cursor, health=health, probe=probe,
-                          timeout=probe_timeout, evidence=evidence)
+    worker, next_worker_cursor = _pick(ordered, rotation.worker_cursor, health=health, probe=probe,
+                                       timeout=probe_timeout, evidence=evidence)
     if worker is None:
         raise NoCandidateError(
             f"任务 {task_class}：所有 Worker 候选都探针失败；不得退回同族自评或 pro 档"
         )
-    rotation.worker_cursor = index
 
     reviewer_pool = [route for route in ordered if cross_ok(worker, route)]
     if not reviewer_pool:
@@ -558,19 +564,19 @@ def _select_once(
             f"没有与执行者 {worker}（provider {worker.provider}，族 {worker.family}）"
             "provider 与族都不同的评审候选；同族/同供应商不得评分，须改选或补池"
         )
-    reviewer, index = _pick(reviewer_pool, rotation.reviewer_cursor, health=health, probe=probe,
-                            timeout=probe_timeout, evidence=evidence)
+    reviewer, next_reviewer_cursor = _pick(reviewer_pool, rotation.reviewer_cursor, health=health, probe=probe,
+                                           timeout=probe_timeout, evidence=evidence)
     if reviewer is None:
         raise CrossFamilyError(
             f"与执行者 {worker} 异族的评审候选全部探针失败；不得退回同族自评或 pro 档"
         )
-    rotation.reviewer_cursor = index
     require_cross(worker, reviewer)
     _note(evidence, f"执行者 {worker}（{worker.provider} 族 {worker.family}，成本档 {worker.tier}）")
     _note(evidence, f"评审者 {reviewer}（{reviewer.provider} 族 {reviewer.family}，成本档 {reviewer.tier}）")
 
     return Selection(worker=worker, reviewer=reviewer, task_class=task_class,
-                     task_type=task_type, degraded=degraded, evidence=evidence)
+                     task_type=task_type, degraded=degraded, evidence=evidence,
+                     next_cursors=(next_worker_cursor, next_reviewer_cursor))
 
 
 # --------------------------------------------------------------------------- #
