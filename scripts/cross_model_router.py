@@ -178,11 +178,15 @@ class Pool:
 
 
 def pool_from_list(entries: Iterable[Mapping[str, object] | Route]) -> Pool:
+    """Build a pool; every entry is validated by `Route.__post_init__`."""
     built: list[Route] = []
-    for entry in entries:
+    for position, entry in enumerate(entries):
         if isinstance(entry, Route):
             built.append(entry)
-        else:
+            continue
+        if not isinstance(entry, Mapping):
+            raise ValueError(f"候选池第 {position + 1} 条不是对象：{entry!r}")
+        try:
             built.append(
                 Route(
                     provider=str(entry.get("provider", "")),
@@ -190,6 +194,8 @@ def pool_from_list(entries: Iterable[Mapping[str, object] | Route]) -> Pool:
                     tier=str(entry.get("tier", "mid")),
                 )
             )
+        except ValueError as error:
+            raise ValueError(f"候选池第 {position + 1} 条无效：{error}") from error
     return Pool(tuple(built))
 
 
@@ -363,12 +369,22 @@ class RotationState:
 
     @classmethod
     def load(cls, path: str) -> "RotationState":
+        """Read the persisted cursors; a missing or corrupt file restarts at zero.
+
+        A bad rotation file must not block dispatch — losing the cursor only costs
+        one round of less-varied selection.
+        """
         try:
             with open(path, encoding="utf-8") as handle:
                 data = json.load(handle)
-        except FileNotFoundError:
+        except (FileNotFoundError, json.JSONDecodeError, OSError):
             return cls()
-        return cls(worker_cursor=int(data.get("worker_cursor", 0)), reviewer_cursor=int(data.get("reviewer_cursor", 0)))
+        if not isinstance(data, Mapping):
+            return cls()
+        return cls(
+            worker_cursor=int(data.get("worker_cursor", 0) or 0),
+            reviewer_cursor=int(data.get("reviewer_cursor", 0) or 0),
+        )
 
     def save(self, path: str) -> None:
         with open(path, "w", encoding="utf-8") as handle:

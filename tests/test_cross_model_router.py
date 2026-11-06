@@ -298,6 +298,20 @@ class PoolAndOrderingTest(unittest.TestCase):
             loaded = RotationState.load(path)
             self.assertEqual((loaded.worker_cursor, loaded.reviewer_cursor), (2, 1))
 
+    def test_corrupt_rotation_file_starts_at_zero_instead_of_crashing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "rotation.json"
+            path.write_text("{not json", encoding="utf-8")
+            loaded = RotationState.load(str(path))
+            self.assertEqual((loaded.worker_cursor, loaded.reviewer_cursor), (0, 0))
+
+    def test_rotation_file_with_wrong_shape_starts_at_zero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "rotation.json"
+            path.write_text("[1, 2]", encoding="utf-8")
+            loaded = RotationState.load(str(path))
+            self.assertEqual((loaded.worker_cursor, loaded.reviewer_cursor), (0, 0))
+
     def test_missing_rotation_file_starts_at_zero(self):
         with tempfile.TemporaryDirectory() as tmp:
             loaded = RotationState.load(str(Path(tmp) / "absent.json"))
@@ -326,6 +340,15 @@ class RouteValidationTest(unittest.TestCase):
     def test_empty_pool_rejected(self):
         with self.assertRaises(ValueError):
             Pool(())
+
+    def test_bad_entry_names_its_position(self):
+        with self.assertRaises(ValueError) as caught:
+            load_pool([{"provider": "trae", "model": "glm-5.3-flash" }, {"provider": "", "model": "x"}])
+        self.assertIn("第 2 条", str(caught.exception))
+
+    def test_non_object_entry_rejected(self):
+        with self.assertRaises(ValueError):
+            load_pool(["trae/glm-5.3-flash"])
 
 
 if __name__ == "__main__":
