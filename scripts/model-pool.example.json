@@ -1,0 +1,15 @@
+{
+  "comment": "候选池示例：tier 为成本档（free/cheap/mid/strong/pro），pro 档任何任务都禁用。provider 为调用渠道/分组 id，family 由 SKILL.md 附录 A.4 的归一化规则从 model 派生。",
+  "candidates": [
+    { "provider": "loomy", "model": "spark-x2.6", "tier": "free" },
+    { "provider": "codearts", "model": "deepseek-v4.1-flash-1017", "tier": "cheap" },
+    { "provider": "trae", "model": "deepseek-v4.1-flash", "tier": "cheap" },
+    { "provider": "loomy", "model": "qwen3.8-flash", "tier": "mid" },
+    { "provider": "trae", "model": "qwen3.8-flash", "tier": "mid" },
+    { "provider": "trae", "model": "glm-5.3-flash", "tier": "mid" },
+    { "provider": "loomy", "model": "GLM-5.3-Flash", "tier": "mid" },
+    { "provider": "buddy", "model": "deepseek-v4.1-flash", "tier": "strong" },
+    { "provider": "magicrew", "model": "deepseek-v4.1-flash", "tier": "strong" },
+    { "provider": "buddy", "model": "deepseek-v4.1-pro", "tier": "pro" }
+  ]
+}
