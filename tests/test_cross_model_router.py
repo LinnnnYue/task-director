@@ -41,7 +41,6 @@ from cross_model_router import (  # noqa: E402  (sys.path set above)
     preferred_tiers,
     select_roles,
     tier_plans,
-    tiers_for,
 )
 
 POOL = Pool(
@@ -208,7 +207,7 @@ class TierTest(unittest.TestCase):
             for band in tier_plans(task):
                 self.assertNotIn("pro", band)
             self.assertNotIn("pro", allowed_tiers(task))
-            self.assertNotIn("pro", tiers_for(task))
+            self.assertNotIn("pro", allowed_tiers(task))
 
     def test_simple_task_prefers_cheap_tiers_when_a_cross_family_pair_exists(self):
         pool = Pool(
@@ -225,7 +224,7 @@ class TierTest(unittest.TestCase):
         self.assertIn(selection.reviewer.tier, ("free", "cheap"))
 
     def test_widening_never_adds_pro(self):
-        self.assertNotIn("pro", tiers_for("complex"))
+        self.assertNotIn("pro", allowed_tiers("complex"))
         self.assertEqual(allowed_tiers("complex"), ("cheap", "mid", "strong"))
 
     def test_degrade_happens_when_the_preferred_band_has_no_cross_family_pair(self):

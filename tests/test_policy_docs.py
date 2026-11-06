@@ -55,6 +55,9 @@ class SkillMdTest(unittest.TestCase):
         self.assertIn("降级只降成本，不降族", self.text)
         self.assertIn("不许\"先用同族评一下\"", self.text)
 
+    def test_names_the_actual_test_command(self):
+        self.assertIn("python -m unittest discover -s tests -v", self.text)
+
     def test_names_the_known_find_first_candidate_defect(self):
         self.assertIn("不盲取目录首个", self.text)
         self.assertIn("find()", self.text)

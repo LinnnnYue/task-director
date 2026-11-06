@@ -199,7 +199,7 @@ metadata:
 ### 可执行实现与校验
 - 参考实现：`./scripts/cross_model_router.py`（标准库，零依赖，不真调模型）。
 - 候选池 schema 示例：`./scripts/model-pool.example.json`。
-- 校验：`python -m unittest discover -s tests -v`（覆盖同族被拒、连续轮换始终异族、坏模型被跳过并拉黑、pro 档禁用、降档不放宽族）。
+- 校验：`python -m unittest discover -s tests -v`（覆盖同族被拒、连续轮换始终异族、坏模型被跳过并拉黑、pro 档禁用、降档不放宽族，以及文档承诺未与实现脱节）。
 
 ## 红线（强制 HITL，不可跳过）
 - **隐私**：用户身份、数据、部署属绝对领域，越权即禁忌

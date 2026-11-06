@@ -263,10 +263,6 @@ def allowed_tiers(task_class: str) -> tuple[str, ...]:
     return tuple(tier for tier in TIERS if tier in present and tier not in FORBIDDEN_TIERS)
 
 
-#: Backwards-compatible alias: the widest legal band for a difficulty.
-tiers_for = allowed_tiers
-
-
 def filter_for_type(routes: Sequence[Route], task_class: str, task_type: str | None) -> tuple[list[Route], str | None]:
     """Complex code work prefers GLM/Qwen-class families; falls back when unavailable."""
     if task_type != "code" or task_class != "complex":
@@ -416,13 +412,6 @@ class Selection:
         }
 
 
-def _rotated(routes: Sequence[Route], cursor: int) -> list[Route]:
-    if not routes:
-        return []
-    index = cursor % len(routes)
-    return list(routes[index:]) + list(routes[:index])
-
-
 def _note(evidence: list[str], line: str) -> None:
     """Append a line kept in the final evidence, removing duplicates."""
     if line not in evidence:
@@ -467,7 +456,7 @@ def select_roles(
     """Pick a worker and a cross-provider, cross-family reviewer.
 
     Order of decisions:
-    1. cost band by difficulty (`tier_plans`), `pro` always excluded;
+    1. cost band by difficulty (`tier_plans` / `allowed_tiers`), `pro` excluded;
     2. complex code tasks prefer GLM/Qwen families, retried without that
        preference if the preferred families cannot be paired cross-family;
     3. canonical order interleaves families, then rotation walks it from the
