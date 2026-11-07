@@ -26,6 +26,8 @@
 - **🛡️ 评分校准日志** — AI 给 AI 打分会漂移。每积累 5 条「人觉得差、机却给了高分」的偏差，该维度默认给分自动收紧 0.3，连续 3 次一致才恢复。越用越诚实。
 - **🗂️ 模板退役机制** — 双条件（>90 天未用 **且** 出现更高分同类模板）才退役。低频用户不被定时器误杀，高频用户不被熵增拖垮。
 - **⚖️ 用户否决权** — 任何评分你都能推翻，「回滚到 Phase 1」的终审永远在你手里。流程为信任服务，不为分数奴役。
+- **🔀 异族互审，防包庇** — 执行者与评审者必须来自**不同供应商、不同模型族**（如执行用 `qwen3.8-flash`、评审用 `GLM-5.3-Flash`）。同族一律拒绝，不许自评。派发前先给每个模型发极小探针，坏模型/超时自动跳过并拉黑，不按目录顺序盲取。
+- **💰 成本分档** — 简单任务走免费/便宜的 flash 档，复杂代码任务用 glm / 千问；`pro` 档任何任务都禁用，不烧积分。
 
 ## 🚀 快速开始
 
@@ -38,13 +40,35 @@ Codex:       ~/.codex/skills/task-director/    # 或 $CODEX_HOME/skills/task-dir
 项目通用:    .agents/skills/task-director/
 ```
 
-目录内需含：`SKILL.md`、`specialist-registry.md`、`role-templates.md`、`score-calibration-log.md`、`role-templates-archive.md`。
+目录内需含：`SKILL.md`、`role-models.md`、`specialist-registry.md`、`role-templates.md`、`score-calibration-log.md`、`role-templates-archive.md`。`scripts/` 与 `tests/` 是可选的参考实现与校验，装上它们才能跑 `python -m unittest`；不装也能用，只是少了自动选型。
 
 **使用**
 
 - 触发词：`派任务` / `orchestrate` / `导演` / `任务拆分` / `分身协作`
 - 信任模式：指令含 `直接派` / `别问直接做` / `auto` 时，Phase 1 静默执行。
 - 红线（强制停下等你）：隐私、对外发布、不可逆操作、预算安全。
+
+**配模型池（跨供应商轮换的前提）** — 打开 `role-models.md`，按你自己的账号把候选池改成实际能用的 provider / model。每条只需三样：调用渠道 `provider`、模型 id `model`、成本档 `tier`（`free` / `cheap` / `mid` / `strong`；`pro` 请标成 `pro`，它会被自动排除）。
+
+三个不能省的规则：
+
+1. **同一模型族至少挂两个供应商**，否则一旦某个渠道 403 / 限流，就凑不出异族评审。
+2. **`pro` 档留着但别用**：条目留在池里只是让池文件如实反映账号能力，选型时会整体排除。
+3. **评审偏好挑刺稳的族**（如 glm）：异族只是前提，「愿不愿意挑刺」才是评审质量。
+
+**验证路由规则** — 纯标准库，无需安装依赖：
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+想先看效果，可以直接跑一轮选型演示：
+
+```bash
+python scripts/cross_model_router.py \
+  --pool scripts/model-pool.example.json \
+  --task complex --type code --rounds 4
+```
 
 ## 🔄 它是怎么运作的
 
@@ -69,6 +93,10 @@ flowchart LR
 
 **专精模块接口** — 在 `specialist-registry.md` 按 schema 挂载你的领域基线（UI 审美、代码规范、写作风格…）。内置的 `ui-design-baseline` 只是格式演示，替换成你自己的模块即可。
 
+**模型池接口** — 在 `role-models.md`（人读）与 `scripts/model-pool.example.json`（机读 schema 示例；复制成你自己的 `model-pool.json` 再指给脚本）登记候选。建议两处同步：人读那份写清楚每个模型的坑，机读那份供脚本跑选型。
+
+**权重与路由是两件事** — 专精模块调「这一维多重」，模型池调「谁来判这一维」。同族互评不受任何权重设置豁免：权重调得再严，同族打分照样会放水。
+
 **用户画像接口** — 如果你蒸馏过自己的用户画像 / 人格偏好（如 `user-profile/self.md`、`persona.md`），可在 Phase 0 声明读取，用于校准表达风格与隐私边界。**完全可选**，不读取也能正常运行。
 
 ## 🪞 Meta · 它审核了自己的发布
@@ -79,11 +107,17 @@ flowchart LR
 
 ```text
 task-director/
-├── SKILL.md                  # 技能本体：5 Phase 工作流 + 10 分制评分卡
-├── specialist-registry.md   # 专精模块挂载与权重覆盖（含示例占位）
+├── SKILL.md                  # 技能本体：5 Phase 工作流 + 10 分制评分卡 + 异族互审约束
+├── role-models.md            # 候选池 / 成本分档 / 探针黑名单 / 轮换（人读）
+├── specialist-registry.md    # 专精模块挂载与权重覆盖（含示例占位）
 ├── role-templates.md         # 已验证角色模板库（含 2 个示例模板）
-├── score-calibration-log.md # 人 vs 机 偏差校准日志（空模板，运行时追加）
+├── score-calibration-log.md  # 人 vs 机 偏差校准日志（空模板，运行时追加）
 ├── role-templates-archive.md # 退役模板归档库（空模板）
+├── scripts/
+│   ├── cross_model_router.py     # 异族互审 + 探针 + 轮换的参考实现（零依赖）
+│   └── model-pool.example.json   # 候选池 schema 示例（机读）
+├── tests/
+│   └── test_cross_model_router.py # 路由规则测试（标准库 unittest）
 ├── LICENSE                   # MIT
 ├── README.md                 # 本文件（中文）
 └── README.en.md              # English version
